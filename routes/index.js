@@ -2,13 +2,6 @@ var express = require('express');
 var router = express.Router();
 const db = require('../db/index.js');
 
-
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
-
-
 // 获取新闻数据列表
 router.get('/allnews', function(req, res, next) {
   let sql = `SELECT * FROM news`;
@@ -88,37 +81,29 @@ router.get('/allexhibitors', function (req, res, next) {
 // 根据展商id获取展品数据(sql有问题 暂存)
 router.get('/getproducts', function (req, res, next) {
   const id = req.query.id;
-  let sql = `SELECT Exhibitor.* FROM Exhibitor 
-               JOIN product ON Exhibitor.id = product.exhibitor_id
-               WHERE product.exhibitor_id = ${id}`;
-
-
+  let sql = `SELECT * FROM product WHERE product.exhibitor_id = (select id from exhibitor where id = ${id} )`
+  let sql2 = `SELECT * FROM exhibitor where id = ${id}`;
+  let products = []
   db.getConnection(function (err, connection) {
     connection.query(sql, (err, result) => {
       if (!err) {
-        // 将结果转换为展商数组和产品数组
-        // const exhibitors = [];
-        // for (let i = 0; i < result.length; i++) {
-        //   const exhibitor = {
-        //     id: result[i].id,
-        //     logoUrl: result[i].logoUrl,
-        //     name: result[i].name,
-        //     introduction: result[i].introduction,
-        //     products: []
-        //   };
-        //   exhibitors.push(exhibitor);
-        // }
+        products = result
+        connection.query(sql2, (err, result) => {
+          if (!err) {
+            console.log(products);
+            let data = {
+              ...result[0],
+              products: products
+            }
 
-        // for (let i = 0; i < result.length; i++) {
-        //   const product = {
-        //     id: result[i].id,
-        //     imgUrl: result[i].imgUrl,
-        //     name: result[i].name,
-        //     introduction: result[i].introduction
-        //   };
-        //   exhibitors[i].products.push(product);
-        // }
-        res.json({ code: 200, msg: '', data: result });
+            res.status(200).json({ data: data })
+          } else {
+            result.status(500).send({
+              code: 500,
+              msg: '获取展品数据失败'
+            });
+          }
+        })
       } else {
         res.status(500).send({
           code: 500,
