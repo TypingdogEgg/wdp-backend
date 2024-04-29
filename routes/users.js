@@ -84,8 +84,8 @@ router.post('/login', (req, res) => {
               code: 200,
               msg: "登陆成功！",
               data:{
-                username:result.username,
-                email:result.email
+                username:result[0].username,
+                email:result[0].email
               },
               token: "Bearer " + token,
             });
